@@ -2,6 +2,8 @@ using BenchmarkDotNet.Attributes;
 
 namespace CalcEngine.Benchmarks;
 
+
+[SimpleJob(launchCount: 3, warmupCount: 5, targetCount: 10)]
 public abstract class BenchmarkBase
 {
     [Params(

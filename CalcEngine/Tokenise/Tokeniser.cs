@@ -9,173 +9,223 @@ public class Tokeniser
 
     public IEnumerable<Token> Tokenise(string expression)
     {
-        ITokeniserState state = EmptyState.Singleton;
         var tokeniserState = new TokeniserState();
         for (int i = 0; i < expression.Length; i++)
         {
-            var (newState, tokens) = state.Parse(tokeniserState, expression, i);
-            foreach (var t in tokens)
+            if (tokeniserState.State == StateName.Default)
             {
-                yield return t;
+                if (ProcessDefault(expression, i, ref tokeniserState) is Token result)
+                {
+                    yield return result;
+                }
             }
-            state = newState;
+            else if (tokeniserState.State == StateName.Number)
+            {
+                if (ProcessNumber(expression, i, ref tokeniserState) is NumberLiteralToken result)
+                {
+                    yield return result;
+                    if (ProcessDefault(expression, i, ref tokeniserState) is Token defaultResult)
+                    {
+                        yield return defaultResult;
+                    }
+                }
+            }
+            else if (tokeniserState.State == StateName.Identifier)
+            {
+                if (ProcessIdentifier(expression, i, ref tokeniserState) is IdentifierToken result)
+                {
+                    yield return result;
+                    if (ProcessDefault(expression, i, ref tokeniserState) is Token defaultResult)
+                    {
+                        yield return defaultResult;
+                    }
+                }
+            }
         }
-        if (state.Complete(expression) is Token finalToken)
+        if (tokeniserState.State == StateName.Number)
         {
-            yield return finalToken;
+            yield return tokeniserState.CompleteNumber(expression);
+        }
+        else if (tokeniserState.State == StateName.Identifier)
+        {
+            yield return tokeniserState.CompleteIdentifier(expression);
+        }
+    }
+
+    private static Token? ProcessDefault(string expression, int i, ref TokeniserState state)
+    {
+        char c = expression[i];
+        if (char.IsWhiteSpace(c))
+        {
+            return null;
+        }
+        else if (char.IsDigit(c))
+        {
+            state.InitialiseNumber(i);
+            return null;
+        }
+        else if (c == '+')
+        {
+            return new OperatorToken(Operator.Addition, i, 1);
+        }
+        else if (c == '-')
+        {
+            return new OperatorToken(Operator.Subtraction, i, 1);
+        }
+        else if (c == '/')
+        {
+            return new OperatorToken(Operator.Division, i, 1);
+        }
+        else if (c == '*')
+        {
+            return new OperatorToken(Operator.Multiplication, i, 1);
+        }
+        else if (c == '(')
+        {
+            return new OperatorToken(Operator.OpenParen, i, 1);
+        }
+        else if (c == ')')
+        {
+            return new OperatorToken(Operator.CloseParen, i, 1);
+        }
+        else if (c == ',')
+        {
+            return new OperatorToken(Operator.Comma, i, 1);
+        }
+        else if (char.IsLetter(c))
+        {
+            state.InitialiseIdentifier(i);
+            return null;
+        }
+        else
+        {
+            throw new InvalidCharacterException(c, i);
+        }
+    }
+
+    private static NumberLiteralToken? ProcessNumber(string expression, int i, ref TokeniserState state)
+    {
+        char c = expression[i];
+        if (c == '.')
+        {
+            if (state.HadExponent || state.HadDecimal)
+            {
+                throw new InvalidCharacterException(c, i);
+            }
+            else
+            {
+                state.AddDecimal();
+                return null;
+            }
+        }
+        else if (c == 'e')
+        {
+            if (state.HadExponent)
+            {
+                throw new InvalidCharacterException(c, i);
+            }
+            else
+            {
+                state.AddExponent();
+                return null;
+            }
+        }
+        else if (char.IsDigit(c))
+        {
+            state.Continue();
+            return null;
+        }
+        else
+        {
+            return state.CompleteNumber(expression);
+        }
+    }
+
+    private static IdentifierToken? ProcessIdentifier(string expression, int i, ref TokeniserState state)
+    {
+        char c = expression[i];
+        if (char.IsLetterOrDigit(c))
+        {
+            state.Continue();
+            return null;
+        }
+        else
+        {
+            return state.CompleteIdentifier(expression);
         }
     }
 }
 
-public class TokeniserState
+public enum StateName
 {
-    public EmptyState EmptyState { get; }
-    public NumericState NumericState { get; }
-    public IdentifierState IdentifierState { get; }
+    Default, Number, Identifier
+}
+
+public struct TokeniserState
+{
+    public StateName State { get; private set; }
+    public bool HadDecimal { get; private set; }
+    public bool HadExponent { get; private set; }
+
+    private int _start;
+    private int _length;
 
     public TokeniserState()
     {
-        EmptyState = new EmptyState();
-        NumericState = new NumericState();
-        IdentifierState = new IdentifierState();
-    }
-}
-
-public interface ITokeniserState
-{
-    (ITokeniserState, IEnumerable<Token>) Parse(TokeniserState tokeniserState, string expression, int i);
-    Token? Complete(string expression);
-}
-
-public class EmptyState : ITokeniserState
-{
-    public static EmptyState Singleton { get; } = new EmptyState();
-
-    public Token? Complete(string expression)
-    {
-        return null;
+        State = StateName.Default;
+        _start = 0;
+        _length = 0;
+        HadDecimal = false;
+        HadExponent = false;
     }
 
-    public (ITokeniserState, IEnumerable<Token>) Parse(TokeniserState tokeniserState, string expression, int i)
-    {
-        char c = expression[i];
-        return c switch
-        {
-            char when char.IsDigit(c) => (NumericState.Create(tokeniserState, i), Enumerable.Empty<Token>()),
-            char when char.IsWhiteSpace(c) => (EmptyState.Singleton, Enumerable.Empty<Token>()),
-            '+' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.Addition, i, 1) }),
-            '-' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.Subtraction, i, 1) }),
-            '/' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.Division, i, 1) }),
-            '*' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.Multiplication, i, 1) }),
-            '(' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.OpenParen, i, 1) }),
-            ')' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.CloseParen, i, 1) }),
-            ',' => (EmptyState.Singleton, new[] { new OperatorToken(Operator.Comma, i, 1) }),
-            char when char.IsLetter(c) => (IdentifierState.Create(i), Enumerable.Empty<Token>()),
-            _ => throw new InvalidCharacterException(c, i)
-        };
-    }
-}
-
-public class NumericState : ITokeniserState
-{
-    private int _start;
-    private int _length;
-    private bool _hadDecimal;
-    private bool _hadExponent;
-
-    public static NumericState Create(TokeniserState tokeniserState, int i)
-    {
-        tokeniserState.NumericState._start = i;
-        tokeniserState.NumericState._hadDecimal = false;
-        tokeniserState.NumericState._hadExponent = false;
-        tokeniserState.NumericState._length = 1;
-        return tokeniserState.NumericState;
-    }
-
-    public (ITokeniserState, IEnumerable<Token>) Parse(TokeniserState tokeniserState, string expression, int i)
-    {
-        char c = expression[i];
-        return c switch
-        {
-            char when char.IsDigit(c) => Continue(),
-            '.' when !_hadDecimal && !_hadExponent => AddDecimal(),
-            'e' when !_hadExponent => AddExponent(),
-            _ => Complete(tokeniserState, expression, i)
-        };
-    }
-
-    private (ITokeniserState, IEnumerable<Token>) AddDecimal()
-    {
-        _hadDecimal = true;
-        return Continue();
-    }
-
-    private (ITokeniserState, IEnumerable<Token>) AddExponent()
-    {
-        _hadExponent = true;
-        return Continue();
-    }
-
-    private (ITokeniserState, IEnumerable<Token>) Continue()
+    public void Continue()
     {
         _length++;
-        return (this, Enumerable.Empty<Token>());
     }
 
-    private (ITokeniserState, IEnumerable<Token>) Complete(TokeniserState tokeniserState, string expression, int i)
+    public void AddDecimal()
     {
-        Token numberToken = Complete(expression);
-        var (nextState, nextTokens) = EmptyState.Singleton.Parse(tokeniserState, expression, i);
-        return (nextState, nextTokens.Prepend(numberToken));
+        HadDecimal = true;
+        _length++;
     }
 
-    public Token Complete(string expression)
+    public void AddExponent()
     {
-        double value = double.Parse(expression.AsSpan().Slice(_start, _length));
+        HadExponent = true;
+        _length++;
+    }
+
+    public void InitialiseNumber(int start)
+    {
+        _start = start;
+        _length = 1;
+        HadDecimal = false;
+        HadExponent = false;
+        State = StateName.Number;
+    }
+
+    public void InitialiseIdentifier(int start)
+    {
+        _start = start;
+        _length = 1;
+        HadDecimal = false;
+        HadExponent = false;
+        State = StateName.Identifier;
+    }
+
+    public NumberLiteralToken CompleteNumber(string expression)
+    {
+        State = StateName.Default;
+        double value = double.Parse(expression.AsSpan(_start, _length));
         var numberToken = new NumberLiteralToken(value, _start, _length);
         return numberToken;
     }
-}
 
-public class IdentifierState : ITokeniserState
-{
-    private readonly static IdentifierState _singleton = new IdentifierState();
-    private int _start;
-    private int _length;
-
-    public static IdentifierState Create(int i)
+    public IdentifierToken CompleteIdentifier(string expression)
     {
-        _singleton._start = i;
-        _singleton._length = 1;
-        return _singleton;
-    }
-
-    public Token Complete(string expression)
-    {
-        var identifierToken = new IdentifierToken(expression.Substring(_start, _length).ToString(), _start, _length);
+        State = StateName.Default;
+        var identifierToken = new IdentifierToken(expression.Substring(_start, _length), _start, _length);
         return identifierToken;
-    }
-
-    public (ITokeniserState, IEnumerable<Token>) Parse(TokeniserState tokeniserState, string expression, int i)
-    {
-        char c = expression[i];
-        return c switch
-        {
-            char when char.IsLetterOrDigit(c) => Continue(),
-            _ => Complete(tokeniserState, expression, i),
-        };
-    }
-
-    private (ITokeniserState, IEnumerable<Token>) Complete(TokeniserState tokeniserState, string expression, int i)
-    {
-        Token identifierToken = Complete(expression);
-        var (nextState, nextTokens) = EmptyState.Singleton.Parse(tokeniserState, expression, i);
-        return (nextState, nextTokens.Prepend(identifierToken));
-    }
-
-    private (ITokeniserState, IEnumerable<Token>) Continue()
-    {
-        _length++;
-        return (this, Enumerable.Empty<Token>());
     }
 }

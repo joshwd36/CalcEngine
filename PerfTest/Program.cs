@@ -6,7 +6,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var expression = "1 + 2 + 3";
+        var expression = "1 + 2 + b";
 
         var compiler = new ILCompiler()
         {
@@ -23,7 +23,7 @@ internal class Program
         double result = 0;
         for (int i = 0; i < 100000; i++)
         {
-            result = compiled.Execute();
+            result = compiled.Execute(3);
         }
 
         Console.WriteLine(result);
