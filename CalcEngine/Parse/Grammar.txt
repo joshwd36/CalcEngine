@@ -1,0 +1,15 @@
+E -> AS.
+AS -> P FP.
+FP ->
+    | P ASL AS.
+P -> L FL.
+FL ->
+    | MDL P.
+L -> variable
+   | number
+   | sub number
+   | lparen E rparen.
+ASL -> add
+     | sub.
+MDL -> mul
+     | div.
