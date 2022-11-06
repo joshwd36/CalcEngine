@@ -16,19 +16,27 @@ public class Parser
     public ParseResult Parse(string expression)
     {
         Peekable<Token> tokens = _tokeniser.Tokenise(expression).Peekable();
+        var expressions = new List<Expr>();
         var variables = new List<string>();
-        var parsed = ParseExpression(tokens, 0, variables);
-        return new ParseResult(parsed, variables);
+        var root = ParseExpression(tokens, 0, expressions, variables);
+        return new ParseResult(root, expressions, variables);
     }
 
-    private Expr ParseExpression(Peekable<Token> tokens, byte minBp, List<string> variables)
+    private int AddExpression(List<Expr> expressions, Expr newExpression)
     {
-        Expr lhs = tokens.Next() switch
+        int index = expressions.Count;
+        expressions.Add(newExpression);
+        return index;
+    }
+
+    private int ParseExpression(Peekable<Token> tokens, byte minBp, List<Expr> expressions, List<string> variables)
+    {
+        int lhs = tokens.Next() switch
         {
-            NumberLiteralToken numberLiteral => new NumberLiteralExpression(numberLiteral.Value),
-            IdentifierToken identifier => ParseIdentifier(identifier.Name, tokens, variables),
-            OperatorToken op when op.Operator == Operator.OpenParen => ParseParen(tokens, variables),
-            OperatorToken infixToken => ParsePrefix(infixToken, tokens, variables),
+            NumberLiteralToken numberLiteral => AddExpression(expressions, new NumberLiteralExpression(numberLiteral.Value)),
+            IdentifierToken identifier => ParseIdentifier(identifier.Name, tokens, expressions, variables),
+            OperatorToken { Operator: Operator.OpenParen } => ParseParen(tokens, expressions, variables),
+            OperatorToken infixToken => ParsePrefix(infixToken, tokens, expressions, variables),
             Token token => throw new InvalidTokenException(token),
             _ => throw new UnexpectedEofException()
         };
@@ -51,8 +59,8 @@ public class Parser
                 }
 
                 tokens.Next();
-                Expr rhs = ParseExpression(tokens, rbp, variables);
-                lhs = new InfixExpression(lhs, op, rhs);
+                int rhs = ParseExpression(tokens, rbp, expressions, variables);
+                lhs = AddExpression(expressions, new InfixExpression(lhs, op, rhs));
             }
             else
             {
@@ -63,11 +71,12 @@ public class Parser
         return lhs;
     }
 
-    private Expr ParseIdentifier(string name, Peekable<Token> tokens, List<string> variables)
+    private int ParseIdentifier(string name, Peekable<Token> tokens, List<Expr> expressions, List<string> variables)
     {
         if (tokens.Peek() is OperatorToken { Operator: Operator.OpenParen })
         {
-            var arguments = new List<Expr>();
+            tokens.Next();
+            var arguments = new List<int>();
             while (true)
             {
                 if (tokens.Peek() is OperatorToken { Operator: Operator.CloseParen })
@@ -75,38 +84,38 @@ public class Parser
                     tokens.Next();
                     break;
                 }
-                var argument = ParseExpression(tokens, 0, variables);
+                var argument = ParseExpression(tokens, 0, expressions, variables);
                 arguments.Add(argument);
                 if (tokens.Peek() is OperatorToken { Operator: Operator.Comma })
                 {
                     tokens.Next();
                 }
             }
-            return new FunctionCallExpression(name, arguments);
+            return AddExpression(expressions, new FunctionCallExpression(name, arguments));
         }
         else
         {
             int existingIndex = variables.FindIndex(v => v == name);
             if (existingIndex >= 0)
             {
-                return new VariableExpression(name, existingIndex);
+                return AddExpression(expressions, new VariableExpression(existingIndex));
             }
             else
             {
                 int index = variables.Count;
                 variables.Add(name);
-                return new VariableExpression(name, index);
+                return AddExpression(expressions, new VariableExpression(index));
             }
         }
     }
 
-    private Expr ParsePrefix(OperatorToken infixToken, Peekable<Token> tokens, List<string> variables)
+    private int ParsePrefix(OperatorToken infixToken, Peekable<Token> tokens, List<Expr> expressions, List<string> variables)
     {
         byte rbp = PrefixBindingPower(infixToken.Operator) ?? throw new InvalidTokenException(infixToken);
-        Expr rhs = ParseExpression(tokens, rbp, variables);
+        int rhs = ParseExpression(tokens, rbp, expressions, variables);
         if (infixToken.Operator == Operator.Subtraction)
         {
-            return new NegativeExpression(rhs);
+            return AddExpression(expressions, new NegativeExpression(rhs));
         }
         else
         {
@@ -114,15 +123,15 @@ public class Parser
         }
     }
 
-    private Expr ParseParen(Peekable<Token> tokens, List<string> variables)
+    private int ParseParen(Peekable<Token> tokens, List<Expr> expressions, List<string> variables)
     {
-        Expr body = ParseExpression(tokens, 0, variables);
+        int body = ParseExpression(tokens, 0, expressions, variables);
         var next = tokens.Next();
         if (next is null)
         {
             throw new UnexpectedEofException();
         }
-        else if (next is not OperatorToken op || op.Operator != Operator.CloseParen)
+        else if (next is not OperatorToken { Operator: Operator.CloseParen })
         {
             throw new InvalidTokenException(next);
         }

@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 namespace CalcEngine.Benchmarks;
 
 
-[SimpleJob(launchCount: 3, warmupCount: 5, targetCount: 10)]
+[SimpleJob(launchCount: 1, warmupCount: 5, targetCount: 10)]
 public abstract class BenchmarkBase
 {
     [Params(
@@ -15,13 +15,13 @@ public abstract class BenchmarkBase
 
     public Dictionary<string, double> Parameters = new Dictionary<string, double>
     {
-        { "a", 5},
-        { "b", 10},
+        { "a", 5.0},
+        { "b", 10.0},
     };
 
     public Dictionary<string, object> ObjectParameters = new Dictionary<string, object>
     {
-        { "a", 5},
-        { "b", 10},
+        { "a", 5.0},
+        { "b", 10.0},
     };
 }

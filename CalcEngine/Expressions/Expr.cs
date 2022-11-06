@@ -2,5 +2,5 @@ namespace CalcEngine.Expressions;
 
 public abstract record Expr
 {
-    public abstract override string ToString();
+    public abstract string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables);
 }

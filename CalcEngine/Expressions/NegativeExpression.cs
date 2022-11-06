@@ -1,6 +1,9 @@
 namespace CalcEngine.Expressions;
 
-public record NegativeExpression(Expr Expression) : Expr
+public record NegativeExpression(int Expression) : Expr
 {
-    public override string ToString() => $"(-{Expression})";
+    public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
+    {
+        return $"(-{expressions[Expression].Format(expressions, variables)})";
+    }
 }

@@ -1,6 +1,10 @@
 namespace CalcEngine.Expressions;
 
-public record FunctionCallExpression(string FunctionName, IReadOnlyList<Expr> Arguments) : Expr
+public record FunctionCallExpression(string FunctionName, IReadOnlyList<int> Arguments) : Expr
 {
-    public override string ToString() => $"({FunctionName}({string.Join(", ", Arguments)}))";
+    public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
+    {
+        var joined = string.Join(", ", Arguments.Select(a => expressions[a].Format(expressions, variables)));
+       return $"({FunctionName}({joined}))";
+    }
 }

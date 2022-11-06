@@ -23,10 +23,7 @@ public class CompilerTests
 
         var result = compiler.Compile("1 + a");
         Assert.Equal(3, result.Execute(new Dictionary<string, object> { { "a", 2 } }));
-        Assert.Equal(3, result.Execute(new List<object> { 2 }));
-        Assert.Equal(3, result.Execute(2));
-        var function = (Func<double, double>)result.Function;
-        Assert.Equal(3, function(2));
+        Assert.Equal(3, result.Execute(new object[] { 2.0 }));
     }
 
     [Fact]
@@ -36,10 +33,7 @@ public class CompilerTests
 
         var result = compiler.Compile("1 + a * b");
         Assert.Equal(-9, result.Execute(new Dictionary<string, object> { { "a", 2 }, { "b", -5 } }));
-        Assert.Equal(-9, result.Execute(new List<object> { 2, -5 }));
-        Assert.Equal(-9, result.Execute(2, -5));
-        var function = (Func<double, double, double>)result.Function;
-        Assert.Equal(-9, function(2, -5));
+        Assert.Equal(-9, result.Execute(new object[] { 2.0, -5.0 }));
     }
 
     [Fact]
@@ -49,9 +43,6 @@ public class CompilerTests
 
         var result = compiler.Compile("1 + a * a");
         Assert.Equal(5, result.Execute(new Dictionary<string, object> { { "a", 2 } }));
-        Assert.Equal(5, result.Execute(new List<object> { 2 }));
-        Assert.Equal(5, result.Execute(2));
-        var function = (Func<double, double>)result.Function;
-        Assert.Equal(5, function(2));
+        Assert.Equal(5, result.Execute(new object[] { 2.0 }));
     }
 }

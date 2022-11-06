@@ -1,4 +1,5 @@
 ﻿using CalcEngine.Compile;
+using System.Diagnostics;
 
 namespace CalcEngine.PerfTest;
 
@@ -6,7 +7,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var expression = "1 + 2 + b";
+        var expression = "1 + 2 + b + 5 * 3 * 2 / 5 + 2 * 54 * 6 + 1 + 2 + 5 * pow(2, 4)";
 
         var compiler = new ILCompiler()
         {
@@ -15,16 +16,23 @@ internal class Program
 
         ExpressionResult compiled = compiler.Compile(expression);
 
-        for (int i = 0; i < 100000; i++)
+        var timer = new Stopwatch();
+        timer.Start();
+        for (int i = 0; i < 1000000; i++)
         {
             compiled = compiler.Compile(expression);
         }
+        timer.Stop();
+        Console.WriteLine(timer.ElapsedMilliseconds);
+        timer.Restart();
 
-        double result = 0;
-        for (int i = 0; i < 100000; i++)
+        double result = 1;
+        for (int i = 0; i < 1000000; i++)
         {
-            result = compiled.Execute(3);
+            result *= compiled.Execute(new object[] { result });
         }
+        timer.Stop();
+        Console.WriteLine(timer.ElapsedMilliseconds);
 
         Console.WriteLine(result);
     }

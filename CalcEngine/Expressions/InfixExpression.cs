@@ -2,10 +2,8 @@ using CalcEngine.Tokenise;
 
 namespace CalcEngine.Expressions;
 
-public record InfixExpression(Expr Left, Operator Operator, Expr Right) : Expr
+public record InfixExpression(int Left, Operator Operator, int Right) : Expr
 {
-    public override string ToString() => $"({Left} {PrintOperator(Operator)} {Right})";
-
     private static string PrintOperator(Operator op)
     {
         return op switch
@@ -19,5 +17,10 @@ public record InfixExpression(Expr Left, Operator Operator, Expr Right) : Expr
             Operator.Comma => ",",
             _ => throw new ArgumentOutOfRangeException(nameof(op))
         };
+    }
+
+    public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
+    {
+        return $"({expressions[Left].Format(expressions, variables)} {PrintOperator(Operator)} {expressions[Right].Format(expressions, variables)})";
     }
 }
