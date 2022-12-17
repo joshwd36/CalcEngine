@@ -1,26 +1,8 @@
 namespace CalcEngine.Tokenise;
 
-public abstract record Token
-{
-    protected Token(int start, int length)
-    {
-        Start = start;
-        Length = length;
-    }
+public abstract record Token(int Start, int Length);
 
-    public int Start { get; }
-    public int Length { get; }
-}
-
-public record OperatorToken : Token
-{
-    public OperatorToken(Operator op, int start, int length) : base(start, length)
-    {
-        Operator = op;
-    }
-
-    public Operator Operator { get; }
-}
+public record OperatorToken(Operator Operator, int Start, int Length) : Token(Start, Length);
 
 public enum Operator
 {
@@ -28,27 +10,25 @@ public enum Operator
     Subtraction,
     Division,
     Multiplication,
+    Remainder,
     OpenParen,
     CloseParen,
     Comma,
+    Not,
+    And,
+    Or,
+    Equal,
+    NotEqual,
+    LessThan,
+    LessThanEqual,
+    GreaterThan,
+    GreaterThanEqual,
 }
 
-public record NumberLiteralToken : Token
-{
-    public NumberLiteralToken(double value, int start, int length) : base(start, length)
-    {
-        Value = value;
-    }
+public record NumberLiteralToken(double Value, int Start, int Length) : Token(Start, Length);
 
-    public double Value { get; }
-}
+public record IdentifierToken(string Name, int Start, int Length) : Token(Start, Length);
 
-public record IdentifierToken : Token
-{
-    public IdentifierToken(string name, int start, int length) : base(start, length)
-    {
-        Name = name;
-    }
+public record StringLiteralToken(string Value, int Start, int Length) : Token(Start, Length);
 
-    public string Name { get; }
-}
+public record BoolLiteralToken(bool Value, int Start, int Length) : Token(Start, Length);

@@ -1,25 +1,25 @@
-using CalcEngine.Check;
+﻿using CalcEngine.Check;
 using CalcEngine.Functions;
 using CalcEngine.Parse;
 
 namespace CalcEngine.Expressions;
 
-public record NumberLiteralExpression(double Value) : Expr
+public record BoolLiteralExpression(bool Value) : Expr
 {
     public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
     {
-        return $"({Value})";
+        return $"{Value}";
     }
 
     public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, ParseResult parseResult, FunctionRegistry functionRegistry)
     {
-        if (expectedType == ExprType.Any || expectedType == ExprType.Number)
+        if (expectedType == ExprType.Bool || expectedType == ExprType.Any)
         {
-            return new TypedNumberLiteralExpr(Value);
+            return new TypedBoolLiteralExpr(Value);
         }
         else
         {
-            throw new InvalidTypeException(expectedType, ExprType.Number);
+            throw new InvalidTypeException(expectedType, ExprType.Bool);
         }
     }
 }

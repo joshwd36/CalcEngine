@@ -22,7 +22,7 @@ public class ExecutionWithCache : BenchmarkBase
     }
 
     [Benchmark]
-    public double CalcEngine() => _calcEngineCompiled.Execute(ObjectParameters);
+    public double CalcEngine() => (double)_calcEngineCompiled.Execute(ObjectParameters);
 
     [Benchmark]
     public double JaceBuild() => _jaceCompiled(Parameters);

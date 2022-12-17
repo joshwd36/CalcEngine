@@ -18,6 +18,7 @@ public class ExecutionWithoutCache : BenchmarkBase
     );
 
     private ExpressionResult _calcEngineCompiled = default!;
+    private object[] listParameters = default!;
     private Func<IDictionary<string, double>, double> _jaceCompiled = default!;
     private NCalc.Expression _ncalcCompiled = default!;
 
@@ -25,12 +26,16 @@ public class ExecutionWithoutCache : BenchmarkBase
     public void GlobalSetup()
     {
         _calcEngineCompiled = _calcEngine.Compile(Expression);
+        listParameters = _calcEngineCompiled.Variables.Select(p => (object)Parameters[p.Name]).ToArray();
         _jaceCompiled = _jace.Build(Expression);
         _ncalcCompiled = new NCalc.Expression(NCalc.Expression.Compile(Expression, true));
     }
 
     [Benchmark]
-    public double CalcEngine() => _calcEngineCompiled.Execute(ObjectParameters);
+    public double CalcEngine() => (double)_calcEngineCompiled.Execute(ObjectParameters);
+
+    [Benchmark]
+    public double CalcEngineList() => (double)_calcEngineCompiled.Execute(listParameters);
 
     [Benchmark]
     public double JaceBuild() => _jaceCompiled(Parameters);

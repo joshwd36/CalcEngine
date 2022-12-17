@@ -15,6 +15,7 @@ internal class Program
         };
 
         ExpressionResult compiled = compiler.Compile(expression);
+        double result = (double)compiled.Execute(new object[] { 1 });
 
         var timer = new Stopwatch();
         timer.Start();
@@ -26,10 +27,9 @@ internal class Program
         Console.WriteLine(timer.ElapsedMilliseconds);
         timer.Restart();
 
-        double result = 1;
         for (int i = 0; i < 1000000; i++)
         {
-            result *= compiled.Execute(new object[] { result });
+            result *= (double)compiled.Execute(new object[] { result });
         }
         timer.Stop();
         Console.WriteLine(timer.ElapsedMilliseconds);

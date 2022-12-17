@@ -22,7 +22,7 @@ public class Parser
         return new ParseResult(root, expressions, variables);
     }
 
-    private int AddExpression(List<Expr> expressions, Expr newExpression)
+    private static int AddExpression(List<Expr> expressions, Expr newExpression)
     {
         int index = expressions.Count;
         expressions.Add(newExpression);
@@ -34,6 +34,8 @@ public class Parser
         int lhs = tokens.Next() switch
         {
             NumberLiteralToken numberLiteral => AddExpression(expressions, new NumberLiteralExpression(numberLiteral.Value)),
+            BoolLiteralToken boolLiteral => AddExpression(expressions, new BoolLiteralExpression(boolLiteral.Value)),
+            StringLiteralToken stringLiteral => AddExpression(expressions, new StringLiteralExpression(stringLiteral.Value)),
             IdentifierToken identifier => ParseIdentifier(identifier.Name, tokens, expressions, variables),
             OperatorToken { Operator: Operator.OpenParen } => ParseParen(tokens, expressions, variables),
             OperatorToken infixToken => ParsePrefix(infixToken, tokens, expressions, variables),
@@ -117,6 +119,10 @@ public class Parser
         {
             return AddExpression(expressions, new NegativeExpression(rhs));
         }
+        else if (infixToken.Operator == Operator.Not)
+        {
+            return AddExpression(expressions, new NotExpression(rhs));
+        }
         else
         {
             return rhs;
@@ -138,30 +144,26 @@ public class Parser
         return body;
     }
 
-    private (byte, byte)? InfixBindingPower(Operator infixOperator)
+    private static (byte, byte)? InfixBindingPower(Operator infixOperator)
     {
         return infixOperator switch
         {
-            Operator.Addition or Operator.Subtraction => (1, 2),
-            Operator.Multiplication or Operator.Division => (3, 4),
+            Operator.Or => (1, 2),
+            Operator.And => (3, 4),
+            Operator.Equal => (5, 6),
+            Operator.LessThan or Operator.LessThanEqual or Operator.GreaterThan or Operator.GreaterThanEqual => (7, 8),
+            Operator.Addition or Operator.Subtraction => (9, 10),
+            Operator.Multiplication or Operator.Division or Operator.Remainder => (11, 12),
             _ => null
         };
     }
 
-    private byte? PrefixBindingPower(Operator infixOperator)
+    private static byte? PrefixBindingPower(Operator infixOperator)
     {
         return infixOperator switch
         {
-            Operator.Addition or Operator.Subtraction => 5,
-            _ => null
-        };
-    }
-
-    private byte? PostfixBindingPower(Operator postfixOperator)
-    {
-        return postfixOperator switch
-        {
-            Operator.OpenParen => 7,
+            Operator.Addition or Operator.Subtraction => 13,
+            Operator.Not => 15,
             _ => null
         };
     }

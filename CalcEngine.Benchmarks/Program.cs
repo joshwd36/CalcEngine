@@ -6,6 +6,6 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var summary = BenchmarkRunner.Run(typeof(BenchmarkBase).Assembly);
+        var summary = BenchmarkRunner.Run(typeof(CompilationSteps));
     }
 }

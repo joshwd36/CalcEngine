@@ -1,13 +1,15 @@
+using CalcEngine.Check;
+
 namespace CalcEngine.Compile;
 
-public record ExpressionResult(Func<object[], double> Function, IReadOnlyList<string> Parameters)
+public record ExpressionResult(Func<IReadOnlyList<object>, object> Function, IReadOnlyList<TypedVariable> Variables, ExprType ReturnType)
 {
-    public double Execute(IReadOnlyDictionary<string, object> parameters)
+    public object Execute(IReadOnlyDictionary<string, object> parameters)
     {
-        return (double)Function(Parameters.Select(p => parameters[p]).ToArray());
+        return Function(Variables.Select(p => parameters[p.Name]).ToArray());
     }
 
-    public double Execute(object[] parameters)
+    public object Execute(IReadOnlyList<object> parameters)
     {
         return Function(parameters);
     }
