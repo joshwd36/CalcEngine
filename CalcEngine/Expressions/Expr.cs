@@ -8,5 +8,5 @@ public abstract record Expr
 {
     public abstract string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables);
 
-    public abstract TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, ParseResult parseResult, FunctionRegistry functionRegistry);
+    public abstract TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry);
 }

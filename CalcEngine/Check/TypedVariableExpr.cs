@@ -9,7 +9,7 @@ public record TypedVariableExpr(int Index, ExprType Type) : TypedExpr(Type)
     private static readonly MethodInfo _convertDouble = typeof(Convert).GetMethod(nameof(Convert.ToDouble), new[] { typeof(object) })!;
     public override void GenerateIl(IReadOnlyList<TypedExpr> expressions, ILGenerator il, double comparisonFactor)
     {
-        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Ldc_I4, Index);
         il.EmitCall(OpCodes.Callvirt, _index, null);
         switch (Type)

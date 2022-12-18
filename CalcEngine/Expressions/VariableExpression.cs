@@ -11,7 +11,7 @@ public record VariableExpression(int Index) : Expr
         return $"({variables[Index]})";
     }
 
-    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, ParseResult parseResult, FunctionRegistry functionRegistry)
+    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry)
     {
         if (typedVariables[Index] is TypedVariable existing)
         {

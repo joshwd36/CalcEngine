@@ -1,4 +1,5 @@
 using CalcEngine.Compile;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -60,8 +61,48 @@ public class CompilerTests
     {
         var compiler = new ILCompiler();
 
-        var result = compiler.Compile("IfString(a == 2, 'Hello', 'World')");
+        var result = compiler.Compile("ifString(a == 2, 'Hello', 'World')");
         Assert.Equal("Hello", result.Execute(new Dictionary<string, object> { { "a", 2 } }));
         Assert.Equal("Hello", result.Execute(new object[] { 2.0 }));
+    }
+
+    [Fact]
+    public void GenericIfString()
+    {
+        var compiler = new ILCompiler();
+
+        var result = compiler.Compile("if(a == 2, 'Hello', 'World')");
+        Assert.Equal("Hello", result.Execute(new Dictionary<string, object> { { "a", 2 } }));
+        Assert.Equal("Hello", result.Execute(new object[] { 2.0 }));
+    }
+
+    [Fact]
+    public void GenericIfBool()
+    {
+        var compiler = new ILCompiler();
+
+        var result = compiler.Compile("if(a == 5, false, true)");
+        Assert.Equal(true, result.Execute(new Dictionary<string, object> { { "a", 2 } }));
+        Assert.Equal(true, result.Execute(new object[] { 2.0 }));
+    }
+
+    [Fact]
+    public void GenericIfNumber()
+    {
+        var compiler = new ILCompiler();
+
+        var result = compiler.Compile("if(a == 5, 3, 2)");
+        Assert.Equal(2.0, result.Execute(new Dictionary<string, object> { { "a", 2 } }));
+        Assert.Equal(2.0, result.Execute(new object[] { 2.0 }));
+    }
+
+    [Fact]
+    public void Pi()
+    {
+        var compiler = new ILCompiler();
+
+        var result = compiler.Compile("2 * pi()");
+        Assert.Equal(2 * Math.PI, result.Execute(new Dictionary<string, object> { { "a", 2 } }));
+        Assert.Equal(2 * Math.PI, result.Execute(new object[] { 2.0 }));
     }
 }

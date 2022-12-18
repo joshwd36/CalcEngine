@@ -11,11 +11,11 @@ public record NegativeExpression(int Expression) : Expr
         return $"(-{expressions[Expression].Format(expressions, variables)})";
     }
 
-    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, ParseResult parseResult, FunctionRegistry functionRegistry)
+    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry)
     {
         if (expectedType == ExprType.Any || expectedType == ExprType.Number)
         {
-            typedExpressions[Expression] = parseResult.Expressions[Expression].TypeCheck(ExprType.Number, typedExpressions, typedVariables, parseResult, functionRegistry);
+            typedExpressions[Expression] = parseResult.Expressions[Expression].TypeCheck(ExprType.Number, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
             return new TypedNegativeExpr(Expression);
         }
         else

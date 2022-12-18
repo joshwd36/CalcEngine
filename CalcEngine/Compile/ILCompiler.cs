@@ -10,8 +10,8 @@ public class ILCompiler : ICompiler
     private readonly Parser _parser;
     private readonly FunctionRegistry _functions;
     private ExpressionCache? _cache;
-    private delegate object F(IReadOnlyList<object> parameters);
-    private static readonly Type[] _methodArgs = new[] { typeof(IReadOnlyList<object>) };
+    private delegate object F(object[] constants, IReadOnlyList<object> parameters);
+    private static readonly Type[] _methodArgs = new[] { typeof(object[]), typeof(IReadOnlyList<object>) };
 
     public bool UseCache
     {
@@ -28,20 +28,15 @@ public class ILCompiler : ICompiler
         _cache = cache;
     }
 
-    private bool CompareDouble(double x, double y)
-    {
-        double absolute = Math.Abs(x - y);
-        return absolute < x * ComparisonFactor || absolute < y * ComparisonFactor;
-    }
-
     public ExpressionResult Compile(ParseResult parsed)
     {
         var method = new DynamicMethod("", typeof(object), _methodArgs);
 
         TypedExpr[] typedExprs = new TypedExpr[parsed.Expressions.Count];
         TypedVariable[] typedVariables = new TypedVariable[parsed.Variables.Count];
+        object[] constants = new object[parsed.ConstantCount];
 
-        TypedExpr typeChecked = parsed.Expressions[parsed.Root].TypeCheck(ExprType.Any, typedExprs, typedVariables, parsed, _functions);
+        TypedExpr typeChecked = parsed.Expressions[parsed.Root].TypeCheck(ExprType.Any, typedExprs, typedVariables, constants, parsed, _functions);
 
         ILGenerator il = method.GetILGenerator();
 
@@ -70,7 +65,9 @@ public class ILCompiler : ICompiler
 
         il.Emit(OpCodes.Ret);
 
-        return new ExpressionResult(method.CreateDelegate<Func<IReadOnlyList<object>, object>>(), typedVariables, typeChecked.Type);
+        Func<object[], IReadOnlyList<object>, object> function = method.CreateDelegate<Func<object[], IReadOnlyList<object>, object>>();
+
+        return new ExpressionResult((variables) => function(constants, variables), typedVariables, typeChecked.Type);
     }
 
     public ExpressionResult Compile(string expression)

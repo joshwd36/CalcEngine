@@ -18,8 +18,9 @@ public class Parser
         Peekable<Token> tokens = _tokeniser.Tokenise(expression).Peekable();
         var expressions = new List<Expr>();
         var variables = new List<string>();
-        var root = ParseExpression(tokens, 0, expressions, variables);
-        return new ParseResult(root, expressions, variables);
+        int constantCount = 0;
+        var root = ParseExpression(tokens, 0, expressions, variables, ref constantCount);
+        return new ParseResult(root, expressions, variables, constantCount);
     }
 
     private static int AddExpression(List<Expr> expressions, Expr newExpression)
@@ -29,16 +30,16 @@ public class Parser
         return index;
     }
 
-    private int ParseExpression(Peekable<Token> tokens, byte minBp, List<Expr> expressions, List<string> variables)
+    private int ParseExpression(Peekable<Token> tokens, byte minBp, List<Expr> expressions, List<string> variables, ref int constantCount)
     {
         int lhs = tokens.Next() switch
         {
             NumberLiteralToken numberLiteral => AddExpression(expressions, new NumberLiteralExpression(numberLiteral.Value)),
             BoolLiteralToken boolLiteral => AddExpression(expressions, new BoolLiteralExpression(boolLiteral.Value)),
             StringLiteralToken stringLiteral => AddExpression(expressions, new StringLiteralExpression(stringLiteral.Value)),
-            IdentifierToken identifier => ParseIdentifier(identifier.Name, tokens, expressions, variables),
-            OperatorToken { Operator: Operator.OpenParen } => ParseParen(tokens, expressions, variables),
-            OperatorToken infixToken => ParsePrefix(infixToken, tokens, expressions, variables),
+            IdentifierToken identifier => ParseIdentifier(identifier.Name, tokens, expressions, variables, ref constantCount),
+            OperatorToken { Operator: Operator.OpenParen } => ParseParen(tokens, expressions, variables, ref constantCount),
+            OperatorToken infixToken => ParsePrefix(infixToken, tokens, expressions, variables, ref constantCount),
             Token token => throw new InvalidTokenException(token),
             _ => throw new UnexpectedEofException()
         };
@@ -61,7 +62,7 @@ public class Parser
                 }
 
                 tokens.Next();
-                int rhs = ParseExpression(tokens, rbp, expressions, variables);
+                int rhs = ParseExpression(tokens, rbp, expressions, variables, ref constantCount);
                 lhs = AddExpression(expressions, new InfixExpression(lhs, op, rhs));
             }
             else
@@ -73,7 +74,7 @@ public class Parser
         return lhs;
     }
 
-    private int ParseIdentifier(string name, Peekable<Token> tokens, List<Expr> expressions, List<string> variables)
+    private int ParseIdentifier(string name, Peekable<Token> tokens, List<Expr> expressions, List<string> variables, ref int constantCount)
     {
         if (tokens.Peek() is OperatorToken { Operator: Operator.OpenParen })
         {
@@ -86,14 +87,14 @@ public class Parser
                     tokens.Next();
                     break;
                 }
-                var argument = ParseExpression(tokens, 0, expressions, variables);
+                var argument = ParseExpression(tokens, 0, expressions, variables, ref constantCount);
                 arguments.Add(argument);
                 if (tokens.Peek() is OperatorToken { Operator: Operator.Comma })
                 {
                     tokens.Next();
                 }
             }
-            return AddExpression(expressions, new FunctionCallExpression(name, arguments));
+            return AddExpression(expressions, new FunctionCallExpression(name, arguments, constantCount++));
         }
         else
         {
@@ -111,10 +112,10 @@ public class Parser
         }
     }
 
-    private int ParsePrefix(OperatorToken infixToken, Peekable<Token> tokens, List<Expr> expressions, List<string> variables)
+    private int ParsePrefix(OperatorToken infixToken, Peekable<Token> tokens, List<Expr> expressions, List<string> variables, ref int constantCount)
     {
         byte rbp = PrefixBindingPower(infixToken.Operator) ?? throw new InvalidTokenException(infixToken);
-        int rhs = ParseExpression(tokens, rbp, expressions, variables);
+        int rhs = ParseExpression(tokens, rbp, expressions, variables, ref constantCount);
         if (infixToken.Operator == Operator.Subtraction)
         {
             return AddExpression(expressions, new NegativeExpression(rhs));
@@ -129,9 +130,9 @@ public class Parser
         }
     }
 
-    private int ParseParen(Peekable<Token> tokens, List<Expr> expressions, List<string> variables)
+    private int ParseParen(Peekable<Token> tokens, List<Expr> expressions, List<string> variables, ref int constantCount)
     {
-        int body = ParseExpression(tokens, 0, expressions, variables);
+        int body = ParseExpression(tokens, 0, expressions, variables, ref constantCount);
         var next = tokens.Next();
         if (next is null)
         {

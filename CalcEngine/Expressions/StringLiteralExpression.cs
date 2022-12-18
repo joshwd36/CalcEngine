@@ -11,7 +11,7 @@ public record StringLiteralExpression(string Value) : Expr
         return $"\"{Value}\"";
     }
 
-    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, ParseResult parseResult, FunctionRegistry functionRegistry)
+    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry)
     {
         if (expectedType == ExprType.Any || expectedType == ExprType.String)
         {
