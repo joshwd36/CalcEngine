@@ -97,6 +97,16 @@ public class CompilerTests
     }
 
     [Fact]
+    public void GenericIfNumberVariable()
+    {
+        var compiler = new ILCompiler();
+
+        var result = compiler.Compile("if(a == 5, b, 2)");
+        Assert.Equal(2.0, result.Execute(new Dictionary<string, object> { { "a", 2 }, { "b", 3 } }));
+        Assert.Equal(2.0, result.Execute(new object[] { 2.0, 3 }));
+    }
+
+    [Fact]
     public void Pi()
     {
         var compiler = new ILCompiler();
