@@ -25,7 +25,7 @@ public class ILCompiler : ICompiler
     {
         _parser = new Parser();
         _functions = functions ?? new FunctionRegistry(true);
-        _cache = cache;
+        _cache = cache ?? new ExpressionCache();
     }
 
     public ExpressionResult Compile(ParseResult parsed)
@@ -71,7 +71,7 @@ public class ILCompiler : ICompiler
 
     public ExpressionResult Compile(string expression)
     {
-        if (_cache is not null && _cache.TryGetExpression(expression) is ExpressionResult cached)
+        if (_cache?.TryGetExpression(expression) is ExpressionResult cached)
         {
             return cached;
         }
