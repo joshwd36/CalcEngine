@@ -2,12 +2,12 @@
 
 namespace CalcEngine.Check;
 
-public record TypedNumberInfixExpr(int Left, NumberOp Operator, int Right) : TypedExpr(ExprType.Number)
+public record TypedNumberInfixExpr(TypedExpr Left, NumberOp Operator, TypedExpr Right) : TypedExpr(ExprType.Number)
 {
-    public override void GenerateIl(IReadOnlyList<TypedExpr> expressions, ILGenerator il, double comparisonFactor)
+    public override void GenerateIl(ILGenerator il, double comparisonFactor)
     {
-        expressions[Left].GenerateIl(expressions, il, comparisonFactor);
-        expressions[Right].GenerateIl(expressions, il, comparisonFactor);
+        Left.GenerateIl(il, comparisonFactor);
+        Right.GenerateIl(il, comparisonFactor);
 
         switch (Operator)
         {

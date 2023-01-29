@@ -1,22 +1,21 @@
 ﻿using CalcEngine.Check;
 using CalcEngine.Functions;
-using CalcEngine.Parse;
 
 namespace CalcEngine.Expressions;
 
-public record NotExpression(int Expression) : Expr
+public record NotExpression(Expr Expression) : Expr
 {
-    public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
+    public override string Format(IReadOnlyList<string> variables)
     {
-        return $"(!{expressions[Expression].Format(expressions, variables)})";
+        return $"(!{Expression.Format(variables)})";
     }
 
-    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry)
+    public override TypedExpr TypeCheck(ExprType expectedType, TypedVariable[] typedVariables, IReadOnlyList<string> variables, object[] constants, FunctionRegistry functionRegistry)
     {
         if (expectedType == ExprType.Any || expectedType == ExprType.Bool)
         {
-            typedExpressions[Expression] = parseResult.Expressions[Expression].TypeCheck(ExprType.Bool, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
-            return new TypedNotExpr(Expression);
+            TypedExpr expr = Expression.TypeCheck(ExprType.Bool, typedVariables, variables, constants, functionRegistry);
+            return new TypedNotExpr(expr);
         }
         else
         {

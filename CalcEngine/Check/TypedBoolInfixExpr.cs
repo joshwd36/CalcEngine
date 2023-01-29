@@ -2,12 +2,12 @@
 
 namespace CalcEngine.Check;
 
-public record TypedBoolInfixExpr(int Left, BoolOp Operator, int Right) : TypedExpr(ExprType.Bool)
+public record TypedBoolInfixExpr(TypedExpr Left, BoolOp Operator, TypedExpr Right) : TypedExpr(ExprType.Bool)
 {
-    public override void GenerateIl(IReadOnlyList<TypedExpr> expressions, ILGenerator il, double comparisonFactor)
+    public override void GenerateIl(ILGenerator il, double comparisonFactor)
     {
-        expressions[Left].GenerateIl(expressions, il, comparisonFactor);
-        expressions[Right].GenerateIl(expressions, il, comparisonFactor);
+        Left.GenerateIl(il, comparisonFactor);
+        Right.GenerateIl(il, comparisonFactor);
 
         switch (Operator)
         {

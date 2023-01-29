@@ -1,11 +1,10 @@
 using CalcEngine.Check;
 using CalcEngine.Functions;
-using CalcEngine.Parse;
 using CalcEngine.Tokenise;
 
 namespace CalcEngine.Expressions;
 
-public record InfixExpression(int Left, Operator Operator, int Right) : Expr
+public record InfixExpression(Expr Left, Operator Operator, Expr Right) : Expr
 {
     private static string PrintOperator(Operator op)
     {
@@ -30,12 +29,12 @@ public record InfixExpression(int Left, Operator Operator, int Right) : Expr
         };
     }
 
-    public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
+    public override string Format(IReadOnlyList<string> variables)
     {
-        return $"({expressions[Left].Format(expressions, variables)} {PrintOperator(Operator)} {expressions[Right].Format(expressions, variables)})";
+        return $"({Left.Format(variables)} {PrintOperator(Operator)} {Right.Format(variables)})";
     }
 
-    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry)
+    public override TypedExpr TypeCheck(ExprType expectedType, TypedVariable[] typedVariables, IReadOnlyList<string> variables, object[] constants, FunctionRegistry functionRegistry)
     {
         if (AsBoolOp() is var (boolOp, expressionType))
         {
@@ -43,10 +42,10 @@ public record InfixExpression(int Left, Operator Operator, int Right) : Expr
             {
                 throw new InvalidTypeException(expectedType, ExprType.Bool);
             }
-            typedExpressions[Left] = parseResult.Expressions[Left].TypeCheck(expressionType, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
-            typedExpressions[Right] = parseResult.Expressions[Right].TypeCheck(expressionType, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
+            TypedExpr left = Left.TypeCheck(expressionType, typedVariables, variables, constants, functionRegistry);
+            TypedExpr right = Right.TypeCheck(expressionType, typedVariables, variables, constants, functionRegistry);
 
-            return new TypedBoolInfixExpr(Left, boolOp, Right);
+            return new TypedBoolInfixExpr(left, boolOp, right);
         }
         else if (AsEqualityOp() is EqualityOp equalityOp)
         {
@@ -55,25 +54,23 @@ public record InfixExpression(int Left, Operator Operator, int Right) : Expr
                 throw new InvalidTypeException(expectedType, ExprType.Bool);
             }
             ExprType equalityType = ExprType.Any;
-            TypedExpr left = parseResult.Expressions[Left].TypeCheck(equalityType, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
+            TypedExpr left = Left.TypeCheck(equalityType, typedVariables, variables, constants, functionRegistry);
             TypedExpr right;
             if (left.Type == ExprType.Any)
             {
-                right = parseResult.Expressions[Right].TypeCheck(equalityType, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
+                right = Right.TypeCheck(equalityType, typedVariables, variables, constants, functionRegistry);
                 if (right.Type != ExprType.Any)
                 {
                     equalityType = right.Type;
-                    left = parseResult.Expressions[Left].TypeCheck(equalityType, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
+                    left = Left.TypeCheck(equalityType, typedVariables, variables, constants, functionRegistry);
                 }
             }
             else
             {
                 equalityType = left.Type;
-                right = parseResult.Expressions[Right].TypeCheck(equalityType, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
+                right = Right.TypeCheck(equalityType, typedVariables, variables, constants, functionRegistry);
             }
-            typedExpressions[Left] = left;
-            typedExpressions[Right] = right;
-            return new TypedEqualityInfixExpr(Left, equalityOp, Right, equalityType);
+            return new TypedEqualityInfixExpr(left, equalityOp, right, equalityType);
         }
         else if (AsNumberOp() is NumberOp numberOp)
         {
@@ -81,10 +78,10 @@ public record InfixExpression(int Left, Operator Operator, int Right) : Expr
             {
                 throw new InvalidTypeException(expectedType, ExprType.Number);
             }
-            typedExpressions[Left] = parseResult.Expressions[Left].TypeCheck(ExprType.Number, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
-            typedExpressions[Right] = parseResult.Expressions[Right].TypeCheck(ExprType.Number, typedExpressions, typedVariables, constants, parseResult, functionRegistry);
+            TypedExpr left = Left.TypeCheck(ExprType.Number, typedVariables, variables, constants, functionRegistry);
+            TypedExpr right = Right.TypeCheck(ExprType.Number, typedVariables, variables, constants, functionRegistry);
 
-            return new TypedNumberInfixExpr(Left, numberOp, Right);
+            return new TypedNumberInfixExpr(left, numberOp, right);
         }
         else
         {

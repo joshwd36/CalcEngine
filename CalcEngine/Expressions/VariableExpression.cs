@@ -1,17 +1,16 @@
 using CalcEngine.Check;
 using CalcEngine.Functions;
-using CalcEngine.Parse;
 
 namespace CalcEngine.Expressions;
 
 public record VariableExpression(int Index) : Expr
 {
-    public override string Format(IReadOnlyList<Expr> expressions, IReadOnlyList<string> variables)
+    public override string Format(IReadOnlyList<string> variables)
     {
         return $"({variables[Index]})";
     }
 
-    public override TypedExpr TypeCheck(ExprType expectedType, TypedExpr[] typedExpressions, TypedVariable[] typedVariables, object[] constants, ParseResult parseResult, FunctionRegistry functionRegistry)
+    public override TypedExpr TypeCheck(ExprType expectedType, TypedVariable[] typedVariables, IReadOnlyList<string> variables, object[] constants, FunctionRegistry functionRegistry)
     {
         if (typedVariables[Index] is TypedVariable existing)
         {
@@ -31,7 +30,7 @@ public record VariableExpression(int Index) : Expr
         }
         else
         {
-            typedVariables[Index] = new TypedVariable(parseResult.Variables[Index], expectedType);
+            typedVariables[Index] = new TypedVariable(variables[Index], expectedType);
             return new TypedVariableExpr(Index, expectedType);
         }
     }

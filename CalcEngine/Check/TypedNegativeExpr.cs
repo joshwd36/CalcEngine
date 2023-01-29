@@ -2,11 +2,11 @@
 
 namespace CalcEngine.Check;
 
-public record TypedNegativeExpr(int Index) : TypedExpr(ExprType.Number)
+public record TypedNegativeExpr(TypedExpr Expr) : TypedExpr(ExprType.Number)
 {
-    public override void GenerateIl(IReadOnlyList<TypedExpr> expressions, ILGenerator il, double comparisonFactor)
+    public override void GenerateIl(ILGenerator il, double comparisonFactor)
     {
-        expressions[Index].GenerateIl(expressions, il, comparisonFactor);
+        Expr.GenerateIl(il, comparisonFactor);
         il.Emit(OpCodes.Neg);
     }
 }

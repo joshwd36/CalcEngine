@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 
 namespace CalcEngine.Check;
 
-public record TypedEqualityInfixExpr(int Left, EqualityOp Operator, int Right, ExprType EqualityType) : TypedExpr(ExprType.Bool)
+public record TypedEqualityInfixExpr(TypedExpr Left, EqualityOp Operator, TypedExpr Right, ExprType EqualityType) : TypedExpr(ExprType.Bool)
 {
     private static readonly MethodInfo _stringEquals = typeof(string).GetMethod("op_Equality")!;
     private static readonly MethodInfo _stringNotEquals = typeof(string).GetMethod("op_Inequality")!;
@@ -15,10 +15,10 @@ public record TypedEqualityInfixExpr(int Left, EqualityOp Operator, int Right, E
         return absolute < a * comparisonFactor || absolute < b * comparisonFactor;
     }
 
-    public override void GenerateIl(IReadOnlyList<TypedExpr> expressions, ILGenerator il, double comparisonFactor)
+    public override void GenerateIl(ILGenerator il, double comparisonFactor)
     {
-        expressions[Left].GenerateIl(expressions, il, comparisonFactor);
-        expressions[Right].GenerateIl(expressions, il, comparisonFactor);
+        Left.GenerateIl(il, comparisonFactor);
+        Right.GenerateIl(il, comparisonFactor);
         switch (EqualityType)
         {
             case ExprType.Number:

@@ -32,15 +32,14 @@ public class ILCompiler : ICompiler
     {
         var method = new DynamicMethod("", typeof(object), _methodArgs);
 
-        TypedExpr[] typedExprs = new TypedExpr[parsed.Expressions.Count];
         TypedVariable[] typedVariables = new TypedVariable[parsed.Variables.Count];
         object[] constants = new object[parsed.ConstantCount];
 
-        TypedExpr typeChecked = parsed.Expressions[parsed.Root].TypeCheck(ExprType.Any, typedExprs, typedVariables, constants, parsed, _functions);
+        TypedExpr typeChecked = parsed.Root.TypeCheck(ExprType.Any, typedVariables, parsed.Variables, constants, _functions);
 
         ILGenerator il = method.GetILGenerator();
 
-        typeChecked.GenerateIl(typedExprs, il, ComparisonFactor);
+        typeChecked.GenerateIl(il, ComparisonFactor);
 
         foreach (TypedVariable typedVariable in typedVariables)
         {
